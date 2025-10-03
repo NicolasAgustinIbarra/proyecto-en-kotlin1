@@ -5,9 +5,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,7 +30,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
-                    primary = Color(0xFF6C63FF),
+                    primary = Color(0xFF00C853),
                     secondary = Color(0xFF03DAC6),
                     background = Color(0xFF121212),
                     surface = Color(0xFF1E1E1E)
@@ -50,27 +51,29 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            LoginScreen(navController)
+    var saldoActual by remember { mutableStateOf(10000.0) }
+
+    NavHost(navController = navController, startDestination = "billetera") {
+        composable("billetera") {
+            BilleteraScreen(navController, saldoActual) { nuevoSaldo ->
+                saldoActual = nuevoSaldo
+            }
         }
-        composable("bienvenida/{nombre}") { backStackEntry ->
-            val nombre = backStackEntry.arguments?.getString("nombre") ?: ""
-            BienvenidaScreen(nombre)
+        composable("comprobante/{monto}") { backStackEntry ->
+            val monto = backStackEntry.arguments?.getString("monto") ?: "0"
+            ComprobanteScreen(monto, saldoActual)
         }
     }
 }
 
 @Composable
-fun LoginScreen(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+fun BilleteraScreen(
+    navController: NavHostController,
+    saldoActual: Double,
+    onSaldoActualizado: (Double) -> Unit
+) {
+    var montoRetiro by remember { mutableStateOf("") }
     var mensajeError by remember { mutableStateOf("") }
-
-    // Datos de prueba
-    val emailCorrecto = "pedro@pe.com.ar"
-    val passwordCorrecta = "abc123"
-    val nombre = "Pedro Pe"
 
     Box(
         modifier = Modifier
@@ -78,9 +81,9 @@ fun LoginScreen(navController: NavHostController) {
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF1a1a2e),
-                        Color(0xFF16213e),
-                        Color(0xFF0f3460)
+                        Color(0xFF1B5E20),
+                        Color(0xFF2E7D32),
+                        Color(0xFF388E3C)
                     )
                 )
             )
@@ -88,80 +91,90 @@ fun LoginScreen(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Card contenedor
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E1E1E).copy(alpha = 0.9f)
+                    containerColor = Color(0xFF1E1E1E).copy(alpha = 0.95f)
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Icon(
+                        Icons.Default.AccountCircle,
+                        contentDescription = "Billetera",
+                        tint = Color(0xFF00C853),
+                        modifier = Modifier
+                            .size(64.dp)
+                            .padding(bottom = 16.dp)
+                    )
+
                     Text(
-                        text = "RECUPERATORIO",
-                        fontSize = 32.sp,
+                        text = "Mi Billetera",
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6C63FF),
-                        modifier = Modifier.padding(bottom = 40.dp)
+                        color = Color(0xFF00C853),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = "Saldo disponible",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = "$ ${String.format("%.2f", saldoActual)}",
+                        fontSize = 42.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 32.dp)
+                    )
+
+                    HorizontalDivider(
+                        color = Color(0xFF00C853).copy(alpha = 0.3f),
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
+                    Text(
+                        text = "Retirar dinero",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
 
                     OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email", color = Color.White.copy(alpha = 0.7f)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Email,
-                                contentDescription = "Email",
-                                tint = Color(0xFF6C63FF)
-                            )
+                        value = montoRetiro,
+                        onValueChange = {
+                            montoRetiro = it
+                            mensajeError = ""
                         },
+                        label = { Text("Monto a retirar", color = Color.White.copy(alpha = 0.7f)) },
+                        placeholder = { Text("0.00", color = Color.White.copy(alpha = 0.4f)) },
+                        prefix = { Text("$ ", color = Color.White) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6C63FF),
+                            focusedBorderColor = Color(0xFF00C853),
                             unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                            cursorColor = Color(0xFF6C63FF)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Contraseña", color = Color.White.copy(alpha = 0.7f)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = "Contraseña",
-                                tint = Color(0xFF6C63FF)
-                            )
-                        },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6C63FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                            cursorColor = Color(0xFF6C63FF)
+                            cursorColor = Color(0xFF00C853)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -175,28 +188,40 @@ fun LoginScreen(navController: NavHostController) {
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Button(
                         onClick = {
-                            if (email == emailCorrecto && password == passwordCorrecta) {
-                                navController.navigate("bienvenida/$nombre")
-                            } else {
-                                mensajeError = "Email o contraseña incorrectos"
+                            val monto = montoRetiro.toDoubleOrNull()
+
+                            when {
+                                montoRetiro.isEmpty() -> {
+                                    mensajeError = "Ingresa un monto"
+                                }
+                                monto == null || monto <= 0 -> {
+                                    mensajeError = "Ingresa un monto válido"
+                                }
+                                monto > saldoActual -> {
+                                    mensajeError = "Saldo insuficiente"
+                                }
+                                else -> {
+                                    val nuevoSaldo = saldoActual - monto
+                                    onSaldoActualizado(nuevoSaldo)
+                                    navController.navigate("comprobante/$monto")
+                                }
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF6C63FF)
+                            containerColor = Color(0xFF00C853)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            "INGRESAR",
+                            "RETIRAR",
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                 }
@@ -206,16 +231,16 @@ fun LoginScreen(navController: NavHostController) {
 }
 
 @Composable
-fun BienvenidaScreen(nombre: String) {
+fun ComprobanteScreen(montoRetirado: String, saldoRestante: Double) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0f3460),
-                        Color(0xFF16213e),
-                        Color(0xFF1a1a2e)
+                        Color(0xFF388E3C),
+                        Color(0xFF2E7D32),
+                        Color(0xFF1B5E20)
                     )
                 )
             )
@@ -223,7 +248,7 @@ fun BienvenidaScreen(nombre: String) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -233,49 +258,78 @@ fun BienvenidaScreen(nombre: String) {
                     .padding(16.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E1E1E).copy(alpha = 0.9f)
+                    containerColor = Color(0xFF1E1E1E).copy(alpha = 0.95f)
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(48.dp),
+                        .padding(40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "🎉",
-                        fontSize = 64.sp,
-                        modifier = Modifier.padding(bottom = 24.dp)
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Exitoso",
+                        tint = Color(0xFF00C853),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .padding(bottom = 24.dp)
                     )
 
                     Text(
-                        text = "¡Bienvenido!",
-                        fontSize = 36.sp,
+                        text = "¡Retiro Exitoso!",
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6C63FF),
+                        color = Color(0xFF00C853),
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    Divider(
-                        color = Color(0xFF6C63FF).copy(alpha = 0.3f),
-                        thickness = 2.dp,
-                        modifier = Modifier
-                            .width(100.dp)
-                            .padding(vertical = 16.dp)
+                    Text(
+                        text = "Tu retiro se procesó correctamente",
+                        fontSize = 16.sp,
+                        color = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 32.dp)
+                    )
+
+                    HorizontalDivider(
+                        color = Color(0xFF00C853).copy(alpha = 0.3f),
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 16.dp)
                     )
 
                     Text(
-                        text = nombre,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Medium,
+                        text = "Monto retirado",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = "$ $montoRetirado",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 32.dp)
                     )
 
+                    HorizontalDivider(
+                        color = Color(0xFF00C853).copy(alpha = 0.3f),
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
                     Text(
-                        text = "Has iniciado sesión exitosamente",
-                        fontSize = 16.sp,
-                        color = Color.White.copy(alpha = 0.7f)
+                        text = "Saldo restante",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Text(
+                        text = "$ ${String.format("%.2f", saldoRestante)}",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF00C853)
                     )
                 }
             }
